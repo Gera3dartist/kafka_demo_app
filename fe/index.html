@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Cats Vs Dogs</title>
+</head>
+<body>
+	<h1>Choose your favorite pet:</h1>
+	<button id="cat-button">Cats</button>
+	<button id="dog-button">Dogs</button>
+	<div>
+		<h2>Total votes for dogs: <span id="dog-total">0</span></h2>
+		<h2>Total votes for cats: <span id="cat-total">0</span></h2>
+	</div>
+
+
+	<script>
+
+		var connection = new WebSocket('ws://localhost:8000/ws');
+		// Define a function to make an AJAX POST call
+		function makePOSTCall(url, data, callback) {
+			// Create a new XMLHttpRequest object
+			var xhr = new XMLHttpRequest();
+
+			// Set the request method and URL
+			xhr.open('POST', url);
+
+			// Set the request header
+			xhr.setRequestHeader('Content-Type', 'application/json');
+
+			// Set the function to handle the response
+			xhr.onload = function() {
+				if (xhr.status === 200) {
+					callback(JSON.parse(xhr.responseText));
+				} else {
+					console.error('Request failed.  Returned status of ' + xhr.status);
+				}
+			};
+
+			// Send the request
+			xhr.send(JSON.stringify(data));
+		}
+
+		// Define a function to handle the response from the server
+		function handleResponse(response) {
+			console.log(response);
+		}
+
+		// Get the button element
+		var catButton = document.getElementById('cat-button');
+		var dogButton = document.getElementById('dog-button');
+		var dogTotal = document.getElementById('dog-total');
+		var catTotal = document.getElementById('cat-total');
+
+		// Add an event listener to the button to make the AJAX POST call when it is clicked
+		catButton.addEventListener('click', () => makePOSTCall('http://127.0.0.1:8000/vote', {choice: 'cat'}, handleResponse))
+		dogButton.addEventListener('click', () => makePOSTCall('http://127.0.0.1:8000/vote', {choice: 'dog'}, handleResponse))
+		updateVotes = (data) => {
+			dogTotal.innerHTML = data.dogs;
+			catTotal.innerHTML = data.cats;
+		}
+		connection.onmessage = function (message) {
+			console.log("message from server = ", message.data);
+			var data = JSON.parse(message.data);
+
+			switch (data.type) {
+				case "vote_count":
+					updateVotes(data.name);
+					break;
+				default:
+					break;
+			}
+};
+
+	</script>
+</body>
+</html>
